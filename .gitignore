@@ -8,7 +8,6 @@ build/
 
 # Data and results
 data/
-results/
 *.png
 *.csv
 
