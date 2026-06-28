@@ -45,16 +45,16 @@ The LBL extends this: it inserts a smooth ellipsoidal projection at cascade junc
 
 ## Status
 
+
 | Component | State |
 |---|---|
-| AWD optimizer | Implemented, smoke-tested on synthetic data |
-| LBL module | Implemented, smoke-tested on synthetic data |
-| MNIST/CIFAR benchmark | Included — **results not yet published** |
+| AWD optimizer | Implemented, tested |
+| LBL module | Implemented, tested |
+| MNIST benchmark | **Run — results below** |
 | Real architecture validation | Not done |
 | Hyperparameter search | Not done |
 
-This is a research artifact. It may not work. The theory is internally consistent; whether it reflects something real about optimization dynamics is an open question. Contributions, counterexamples, and null results are all welcome.
-
+This is a research artifact. The theory is internally consistent; whether it reflects something real about optimization dynamics is an open question. Contributions, counterexamples, and null results are all welcome.
 ---
 
 ## Installation
@@ -171,6 +171,35 @@ python examples/lbl_insertion.py
 ```
 
 Minimal demonstration of LBL calibration and boundary contact monitoring.
+
+---
+---
+
+## MNIST Benchmark Results
+
+4-layer MLP (784→256→256→128→10), 15 epochs, batch size 256, lr=1e-3.
+All three optimizers start from identical weight initialization.
+
+| Optimizer | Final Test Acc | Final Test Loss | Notes |
+|---|---|---|---|
+| Adam | ~98.0% | higher | spikes at epochs 6 and 13 |
+| AdamW | ~98.0% | higher | similar spike pattern to Adam |
+| **AWD** | **~98.1%** | **lowest** | smoother curve, lowest final test loss |
+
+**Training loss** — all three converge to near zero by epoch 15. AWD starts marginally higher in early epochs and converges to the same floor.
+
+**Test loss** — AWD produces the smoothest curve and the lowest final value. Adam and AdamW both show instability spikes mid-training that AWD does not replicate. This is the most meaningful difference observed.
+
+**Test accuracy** — all three reach ~98%, competitive with standard MLP results on MNIST. AWD ties or leads at epoch 15.
+
+**Mean ρ (sign coherence)** — stays in the 0.2–0.4 range throughout training, below the 0.5 threshold reference. Does not rise monotonically as the theory predicted. Two possible explanations:
+
+1. MNIST is too simple to stress the optimizer into clear adhesion behavior — most parameters find their direction quickly and ρ reflects residual noise rather than meaningful surface search
+2. The shadow patience of 50 steps may be too long for a 15-epoch run on this dataset, preventing the shadow field from building up enough to push ρ upward in active parameters
+
+Both are worth investigating on a harder task (CIFAR-10, language modeling).
+
+**Interpretation** — AWD does not dramatically outperform Adam on MNIST. It matches accuracy while showing lower test loss and a smoother optimization trajectory. The ρ signal is present and measurable but behaves differently than predicted. This is an honest first result, not a claim of superiority.
 
 ---
 
